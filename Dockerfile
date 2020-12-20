@@ -6,3 +6,4 @@ RUN pip install pandas numpy matplotlib plotly scikit-learn xgboost
 RUN pip install -U pandas-profiling[notebook] 
 RUN jupyter nbextension enable --py widgetsnbextension
 USER $NB_UID
+
