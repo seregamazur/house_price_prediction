@@ -4,4 +4,3 @@ LABEL author="Serhii Mazur"
 USER root
 RUN pip install pandas numpy matplotlib plotly scikit-learn tensorflow
 USER $NB_UID
-

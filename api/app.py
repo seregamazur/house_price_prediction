@@ -1,8 +1,10 @@
 import os
-import pickle
+import gzip, pickle
 
 import pandas as pd
+import numpy as np
 from flask import Flask, jsonify, request, render_template, redirect
+from keras.models import load_model
 from werkzeug.utils import secure_filename
 
 from misc import normalize, prepare
@@ -13,8 +15,11 @@ ALLOWED_EXTENSIONS = {'csv'}
 app = Flask(__name__, template_folder="templates")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = SECRET_KEY
-model = pickle.load(open('./regression_model/saved_model.pb', 'rb'))
+# model = pickle.load(open('./regression_model/saved_model.pb', 'rb'))
 
+# model = {'file': open('./uploads/regression_model/saved_model.pb', 'rb')}
+# model = open('./uploads/saved_model.pb', 'rb')
+model = keras.models.load_model('./uploads/saved_model.pb')
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -31,18 +36,21 @@ def csv_data():
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
+            print('No file part')
             return redirect(request.url)
         file = request.files['file']
         # if user does not select file, browser also
         # submit an empty part without filename
         if file.filename == '':
+            print('No selected file')
             return redirect(request.url)
         if file and allowed_file(file.filename):
             data_df = pd.read_csv(file)
             try:
                 id_df = data_df["Id"].values
                 data_df.drop("Id", axis=1, inplace=True)
-                d = xgb.DMatrix(normalize(data_df))
+                # d = xgb.DMatrix(normalize(data_df))
+                d = np.array(data_df)
             except ValueError as e:
                 return f"SERVER ERROR {e}", 400
             result = model.predict(d)
@@ -61,7 +69,7 @@ def hello():
     if not data:
         return jsonify({"err": "No data supplied"}), 400
     try:
-        d = xgb.DMatrix(normalize(prepare(data)))
+        d = np.array(normalize(prepare(data)))
     except ValueError as e:
         return jsonify({"err": str(e)}), 400
     result = model.predict(d)
